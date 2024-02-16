@@ -1,0 +1,33 @@
+version: "3.7"
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: dev-user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dev_db
+    ports:
+      - 5432:5432
+    expose:
+      - "5432"
+    volumes:
+      - ./db-mount/db-data:/var/lib/postgresql/data:cached
+
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    command: python main.py
+    tty: true
+    volumes:
+      - ./backend:/backend/:cached
+      - ./.docker/.ipython:/root/.ipython:cached
+    environment:
+      ENV: "prod"
+      PYTHONPATH: .
+      DATABASE_URL: "postgresql+asyncpg://dev-user:password@postgres:5432/dev_db"
+    depends_on:
+      - "postgres"
+    ports:
+      - 8000:8000
